@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My URL Shortener</title>
+    <style>
+        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #f0f2f5; }
+        .card { background: white; padding: 2rem; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
+        input { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; background: #0070f3; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #005bb5; }
+        .result { margin-top: 15px; padding: 10px; background: #eeffee; border: 1px solid #ccffcc; border-radius: 5px; display: none; word-break: break-all; text-align: center; }
+        .error { color: red; margin-top: 10px; display: none; text-align: center;}
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2 style="text-align: center;">Short Link Generator</h2>
+    <input type="text" id="longUrl" placeholder="Enter long URL here..." required>
+    <button onclick="shorten()">Generate Short Link</button>
+    
+    <div id="result" class="result"></div>
+    <div id="error" class="error"></div>
+</div>
+
+<script>
+    async function shorten() {
+        const urlInput = document.getElementById('longUrl').value;
+        const resultDiv = document.getElementById('result');
+        const errorDiv = document.getElementById('error');
+        
+        resultDiv.style.display = 'none';
+        errorDiv.style.display = 'none';
+
+        if (!urlInput) return;
+
+        try {
+            const response = await fetch('/api/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: urlInput })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                resultDiv.style.display = 'block';
+                resultDiv.innerHTML = `Success! <br> <a href="${data.shortUrl}" target="_blank">${data.shortUrl}</a>`;
+            } else {
+                errorDiv.style.display = 'block';
+                errorDiv.innerText = "Error: " + data.error;
+            }
+        } catch (err) {
+            errorDiv.style.display = 'block';
+            errorDiv.innerText = "Failed to connect.";
+        }
+    }
+</script>
+
+</body>
+</html>
