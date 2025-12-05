@@ -8,17 +8,27 @@ const supabase = createClient(
 export default async function handler(req, res) {
   const { slug } = req.query;
 
-  // Database ထဲမှာ Slug တူတာ သွားရှာမယ်
-  const { data } = await supabase
+  // 1. Database ထဲ ရှာမယ်
+  const { data, error } = await supabase
     .from('links')
     .select('url')
     .eq('slug', slug)
     .single();
 
+  // 2. Error ရှိရင် ထုတ်ပြမယ် (ဒါမှ ဘာမှားလဲ သိရမှာ)
+  if (error) {
+    return res.status(500).json({ 
+      message: "Supabase Error", 
+      details: error.message, 
+      hint: "Check Vercel Environment Variables or Supabase RLS"
+    });
+  }
+
+  // 3. Link ရှိရင် Redirect လုပ်မယ်
   if (data && data.url) {
-    // တွေ့ရင် Redirect လုပ်မယ် (307 Temporary Redirect)
     return res.redirect(307, data.url);
   }
 
-  return res.status(404).send("Link Not Found / Expired");
+  // 4. မရှိရင်
+  return res.status(404).send(`Link Not Found for slug: ${slug}`);
 }
