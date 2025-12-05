@@ -3,38 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My URL Shortener</title>
+    <title>Short Link Generator</title>
     <style>
-        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #f0f2f5; }
-        .card { background: white; padding: 2rem; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
-        input { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
-        button { width: 100%; padding: 10px; background: #0070f3; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        button:hover { background: #005bb5; }
-        .result { margin-top: 15px; padding: 10px; background: #eeffee; border: 1px solid #ccffcc; border-radius: 5px; display: none; word-break: break-all; text-align: center; }
-        .error { color: red; margin-top: 10px; display: none; text-align: center;}
+        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #f0f2f5; margin: 0; }
+        .card { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 90%; max-width: 400px; text-align: center; }
+        h2 { margin-top: 0; color: #333; }
+        input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        
+        .btn-generate { width: 100%; padding: 12px; background: #0070f3; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; transition: 0.2s; }
+        .btn-generate:hover { background: #005bb5; }
+        
+        /* Result Box Styles */
+        .result-container { margin-top: 20px; display: none; }
+        .result-box { background: #f4f4f4; padding: 10px; border-radius: 8px; border: 1px solid #ddd; word-break: break-all; margin-bottom: 10px; color: #0070f3; font-weight: bold; }
+        
+        .btn-copy { padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 14px; width: 100%; transition: 0.2s; }
+        .btn-copy:hover { background: #218838; }
+        
+        .error { color: red; margin-top: 10px; display: none; font-size: 14px; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2 style="text-align: center;">Short Link Generator</h2>
+    <h2>🔗 Link Shortener</h2>
     <input type="text" id="longUrl" placeholder="Enter long URL here..." required>
-    <button onclick="shorten()">Generate Short Link</button>
+    <button class="btn-generate" onclick="shorten()" id="genBtn">Generate Short Link</button>
     
-    <div id="result" class="result"></div>
+    <div id="resultArea" class="result-container">
+        <div class="result-box">
+            <a id="shortLinkText" href="#" target="_blank" style="text-decoration: none; color: #0070f3;"></a>
+        </div>
+        <button class="btn-copy" onclick="copyLink()" id="copyBtn">📋 Copy Link</button>
+    </div>
+
     <div id="error" class="error"></div>
 </div>
 
 <script>
     async function shorten() {
         const urlInput = document.getElementById('longUrl').value;
-        const resultDiv = document.getElementById('result');
+        const resultArea = document.getElementById('resultArea');
+        const shortLinkText = document.getElementById('shortLinkText');
         const errorDiv = document.getElementById('error');
-        
-        resultDiv.style.display = 'none';
-        errorDiv.style.display = 'none';
+        const genBtn = document.getElementById('genBtn');
+        const copyBtn = document.getElementById('copyBtn');
 
-        if (!urlInput) return;
+        // Reset UI
+        resultArea.style.display = 'none';
+        errorDiv.style.display = 'none';
+        copyBtn.innerText = "📋 Copy Link";
+        copyBtn.style.background = "#28a745";
+
+        if (!urlInput) {
+            alert("Please enter a URL");
+            return;
+        }
+
+        // Add loading state
+        genBtn.innerText = "Generating...";
+        genBtn.disabled = true;
 
         try {
             const response = await fetch('/api/create', {
@@ -46,16 +74,39 @@
             const data = await response.json();
 
             if (response.ok) {
-                resultDiv.style.display = 'block';
-                resultDiv.innerHTML = `Success! <br> <a href="${data.shortUrl}" target="_blank">${data.shortUrl}</a>`;
+                resultArea.style.display = 'block';
+                shortLinkText.innerText = data.shortUrl;
+                shortLinkText.href = data.shortUrl;
             } else {
                 errorDiv.style.display = 'block';
-                errorDiv.innerText = "Error: " + data.error;
+                errorDiv.innerText = "Error: " + (data.error || "Something went wrong");
             }
         } catch (err) {
             errorDiv.style.display = 'block';
-            errorDiv.innerText = "Failed to connect.";
+            errorDiv.innerText = "Failed to connect to server.";
         }
+
+        // Restore button
+        genBtn.innerText = "Generate Short Link";
+        genBtn.disabled = false;
+    }
+
+    function copyLink() {
+        const linkText = document.getElementById('shortLinkText').innerText;
+        const copyBtn = document.getElementById('copyBtn');
+
+        navigator.clipboard.writeText(linkText).then(() => {
+            copyBtn.innerText = "✅ Copied!";
+            copyBtn.style.background = "#1e7e34";
+            
+            // 2 စက္ကန့်နေရင် မူရင်းအတိုင်းပြန်ပြမယ်
+            setTimeout(() => {
+                copyBtn.innerText = "📋 Copy Link";
+                copyBtn.style.background = "#28a745";
+            }, 2000);
+        }).catch(err => {
+            alert("Failed to copy link");
+        });
     }
 </script>
 
