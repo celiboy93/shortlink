@@ -8,28 +8,27 @@ const supabase = createClient(
 export default async function handler(req, res) {
   const { slug } = req.query;
 
-  // 1. Database ထဲမှာ သွားရှာမယ်
-  // 🔥 FIX: .single() အစား .maybeSingle() သုံးပါ
-  // ဒါမှ Data မရှိရင် Error မတက်ဘဲ null ပြန်မှာပါ
+  // 1. Database ရှာမယ် (.single ဖြုတ်ထားသည်)
   const { data, error } = await supabase
     .from('links')
     .select('url')
-    .eq('slug', slug)
-    .maybeSingle(); 
+    .eq('slug', slug);
 
-  // Database Error ရှိရင်ပြမယ်
   if (error) {
-    return res.status(500).json({ 
-      message: "Database Error", 
-      details: error.message 
-    });
+    return res.status(500).json({ error: error.message });
   }
 
-  // 2. Link တွေ့ရင် Redirect လုပ်မယ်
-  if (data && data.url) {
-    return res.redirect(307, data.url);
+  // 2. Data ရှိမရှိ စစ်မယ် (Array အနေနဲ့)
+  if (data && data.length > 0) {
+    let destination = data[0].url;
+    
+    // 3. URL မှာ https:// မပါရင် ထည့်ပေးမယ် (Supabase မှာ www.google.com လို့ထည့်ထားရင် ပြင်ပေးဖို့)
+    if (!destination.startsWith('http://') && !destination.startsWith('https://')) {
+        destination = 'https://' + destination;
+    }
+
+    return res.redirect(307, destination);
   }
 
-  // 3. မတွေ့ရင် 404 ပြမယ်
-  return res.status(404).send(`Link Not Found: ${slug}`);
+  return res.status(404).send("Link Not Found");
 }
